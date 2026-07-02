@@ -1,5 +1,5 @@
-const CACHE_NAME = "ponto-online-v1";
-const CORE_FILES = ["./", "./index.html", "./style.css", "./app.js", "./firebase-config.js", "./manifest.json", "./icon.svg"];
+const CACHE_NAME = "ponto-online-v2";
+const CORE_FILES = ["./", "./index.html", "./style.css", "./app.js?v=20260702-2", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -8,13 +8,22 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+    caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
   );
   self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+
+  const url = new URL(event.request.url);
+  const isFirebaseConfig = url.pathname.endsWith("/firebase-config.js");
+
+  if (isFirebaseConfig) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
