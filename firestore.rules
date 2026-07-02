@@ -88,7 +88,7 @@ service cloud.firestore {
         && hasSession()
         && request.resource.data.authUid == request.auth.uid
         && request.resource.data.funcionarioCpf == sessionCpf()
-        && request.resource.data.tipo in ['entrada', 'pausa', 'retorno', 'saida']
+        && request.resource.data.tipo == 'ponto'
         && request.resource.data.funcionarioNome is string
         && request.resource.data.localizacao.lat is number
         && request.resource.data.localizacao.lng is number
