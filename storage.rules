@@ -1,0 +1,34 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.ativo == true;
+    }
+
+    function hasSessionFor(cpf) {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/sessoes/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/sessoes/$(request.auth.uid)).data.cpf == cpf;
+    }
+
+    match /pontos/{cpf}/{fileName} {
+      allow read: if isAdmin() || hasSessionFor(cpf);
+      allow create: if hasSessionFor(cpf)
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

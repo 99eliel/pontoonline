@@ -1,0 +1,16 @@
+{
+  "name": "Sistema de Ponto Online",
+  "short_name": "Ponto Online",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#eef2f7",
+  "theme_color": "#101828",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

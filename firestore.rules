@@ -1,0 +1,124 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function adminPath() {
+      return /databases/$(database)/documents/admins/$(request.auth.uid);
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(adminPath())
+        && get(adminPath()).data.ativo == true;
+    }
+
+    function validCpf(cpf) {
+      return cpf is string && cpf.matches('^[0-9]{11}$');
+    }
+
+    function funcionarioPath(cpf) {
+      return /databases/$(database)/documents/funcionarios/$(cpf);
+    }
+
+    function sessionPath() {
+      return /databases/$(database)/documents/sessoes/$(request.auth.uid);
+    }
+
+    function hasSession() {
+      return signedIn() && exists(sessionPath());
+    }
+
+    function sessionCpf() {
+      return get(sessionPath()).data.cpf;
+    }
+
+    function isOwnFuncionario(cpf) {
+      return hasSession()
+        && sessionCpf() == cpf
+        && exists(funcionarioPath(cpf))
+        && get(funcionarioPath(cpf)).data.ativo == true;
+    }
+
+    match /admins/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /funcionarios/{cpf} {
+      allow read: if isAdmin() || isOwnFuncionario(cpf);
+      allow create, update: if isAdmin()
+        && validCpf(cpf)
+        && request.resource.data.cpf == cpf
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() >= 3
+        && request.resource.data.nascimento is string
+        && request.resource.data.nascimento.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.ativo is bool;
+      allow delete: if isAdmin();
+    }
+
+    match /sessoes/{uid} {
+      allow read, delete: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update: if signedIn()
+        && request.auth.uid == uid
+        && validCpf(request.resource.data.cpf)
+        && request.resource.data.nascimentoInformado is string
+        && request.resource.data.nascimentoInformado.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && exists(funcionarioPath(request.resource.data.cpf))
+        && get(funcionarioPath(request.resource.data.cpf)).data.ativo == true
+        && get(funcionarioPath(request.resource.data.cpf)).data.nascimento == request.resource.data.nascimentoInformado
+        && request.resource.data.keys().hasOnly([
+          'cpf',
+          'nascimentoInformado',
+          'criadoEm',
+          'ultimoAcesso',
+          'userAgent'
+        ]);
+    }
+
+    match /pontos/{pontoId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.authUid == request.auth.uid);
+
+      allow create: if signedIn()
+        && hasSession()
+        && request.resource.data.authUid == request.auth.uid
+        && request.resource.data.funcionarioCpf == sessionCpf()
+        && request.resource.data.tipo in ['entrada', 'pausa', 'retorno', 'saida']
+        && request.resource.data.funcionarioNome is string
+        && request.resource.data.localizacao.lat is number
+        && request.resource.data.localizacao.lng is number
+        && request.resource.data.localizacao.accuracy is number
+        && request.resource.data.fotoPath == ('pontos/' + sessionCpf() + '/' + pontoId + '.jpg')
+        && request.resource.data.keys().hasOnly([
+          'authUid',
+          'funcionarioCpf',
+          'funcionarioNome',
+          'setor',
+          'cargo',
+          'tipo',
+          'dataHora',
+          'createdAt',
+          'localizacao',
+          'fotoPath',
+          'fotoUrl',
+          'origem',
+          'userAgent'
+        ]);
+
+      allow update, delete: if isAdmin();
+    }
+
+    match /config/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

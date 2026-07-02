@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#101828" />
+  <title>Sistema de Ponto Online</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Controle de Jornada</p>
+        <h1>Sistema de Ponto Online</h1>
+      </div>
+      <div class="top-actions">
+        <button id="btnInstall" class="btn ghost hidden" type="button">Instalar app</button>
+        <span id="connectionBadge" class="badge">Firebase não configurado</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero-card">
+        <div>
+          <h2>Bata o ponto com CPF, data de nascimento, localização e foto.</h2>
+          <p>Protótipo pronto para testar com Firebase + GitHub Pages. Use o painel administrativo para cadastrar funcionários e acompanhar os registros.</p>
+        </div>
+        <div class="hero-metrics">
+          <div><strong id="clockTime">--:--</strong><span>Horário atual</span></div>
+          <div><strong id="clockDate">--/--/----</strong><span>Data</span></div>
+        </div>
+      </section>
+
+      <nav class="tabs" aria-label="Alternar área do sistema">
+        <button class="tab active" data-target="funcionarioView" type="button">Funcionário</button>
+        <button class="tab" data-target="adminView" type="button">Administrador</button>
+      </nav>
+
+      <section id="funcionarioView" class="view active">
+        <div id="funcLoginCard" class="grid two-cols">
+          <form id="funcLoginForm" class="card form-card">
+            <div class="section-title">
+              <p class="eyebrow">Acesso do funcionário</p>
+              <h3>Entrar para bater ponto</h3>
+            </div>
+
+            <label>
+              CPF
+              <input id="funcCpf" type="text" inputmode="numeric" autocomplete="off" placeholder="Somente números" maxlength="14" required />
+            </label>
+
+            <label>
+              Data de nascimento
+              <input id="funcBirth" type="date" required />
+            </label>
+
+            <button class="btn primary full" type="submit">Entrar</button>
+            <p class="hint">O sistema valida os dados cadastrados no painel administrativo.</p>
+          </form>
+
+          <aside class="card info-card">
+            <h3>Como funciona</h3>
+            <ol>
+              <li>O funcionário informa CPF e data de nascimento.</li>
+              <li>O navegador solicita permissão de localização e câmera.</li>
+              <li>O registro salva data, hora, coordenadas e foto no Firebase.</li>
+            </ol>
+            <p class="warning">Use com consentimento dos funcionários e informe a finalidade do uso da foto e localização.</p>
+          </aside>
+        </div>
+
+        <div id="funcArea" class="hidden">
+          <div class="grid two-cols align-start">
+            <section class="card">
+              <div class="employee-head">
+                <div>
+                  <p class="eyebrow">Funcionário logado</p>
+                  <h3 id="funcName">-</h3>
+                  <p id="funcMeta" class="muted">-</p>
+                </div>
+                <button id="btnFuncLogout" class="btn danger ghost" type="button">Sair</button>
+              </div>
+
+              <div class="status-grid">
+                <div class="status-item">
+                  <span>Localização</span>
+                  <strong id="locationStatus">Não capturada</strong>
+                </div>
+                <div class="status-item">
+                  <span>Câmera</span>
+                  <strong id="cameraStatus">Não iniciada</strong>
+                </div>
+              </div>
+
+              <div class="camera-box">
+                <video id="cameraVideo" autoplay playsinline muted></video>
+                <canvas id="photoCanvas" class="hidden"></canvas>
+              </div>
+
+              <div class="actions-grid">
+                <button class="btn point" data-point="entrada" type="button">Entrada</button>
+                <button class="btn point" data-point="pausa" type="button">Pausa</button>
+                <button class="btn point" data-point="retorno" type="button">Retorno</button>
+                <button class="btn point out" data-point="saida" type="button">Saída</button>
+              </div>
+
+              <button id="btnStartCamera" class="btn secondary full" type="button">Ativar câmera</button>
+              <p class="hint">A câmera precisa estar ativa no momento do registro.</p>
+            </section>
+
+            <section class="card">
+              <div class="section-title row-between">
+                <div>
+                  <p class="eyebrow">Histórico</p>
+                  <h3>Últimos pontos</h3>
+                </div>
+                <button id="btnReloadFuncPoints" class="btn ghost" type="button">Atualizar</button>
+              </div>
+              <div id="funcPointsList" class="list empty">Nenhum ponto carregado.</div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section id="adminView" class="view">
+        <div id="adminLoginCard" class="grid two-cols">
+          <form id="adminLoginForm" class="card form-card">
+            <div class="section-title">
+              <p class="eyebrow">Painel administrativo</p>
+              <h3>Entrar como administrador</h3>
+            </div>
+
+            <label>
+              E-mail
+              <input id="adminEmail" type="email" autocomplete="email" placeholder="admin@empresa.com" required />
+            </label>
+
+            <label>
+              Senha
+              <input id="adminPassword" type="password" autocomplete="current-password" required />
+            </label>
+
+            <button class="btn primary full" type="submit">Entrar no painel</button>
+            <p class="hint">O primeiro administrador precisa ser liberado no Firestore usando o UID da conta.</p>
+          </form>
+
+          <aside class="card info-card">
+            <h3>Primeiro acesso do admin</h3>
+            <p>Crie um usuário com e-mail e senha no Firebase Authentication. Depois copie o UID e crie o documento:</p>
+            <pre><code>admins/UID_DO_ADMIN
+{
+  nome: "Eliel",
+  email: "seuemail@dominio.com",
+  ativo: true,
+  role: "admin"
+}</code></pre>
+          </aside>
+        </div>
+
+        <div id="adminArea" class="hidden">
+          <div class="admin-head card">
+            <div>
+              <p class="eyebrow">Admin conectado</p>
+              <h3 id="adminName">Administrador</h3>
+            </div>
+            <div class="admin-actions">
+              <button id="btnExportCsv" class="btn secondary" type="button">Exportar CSV</button>
+              <button id="btnAdminLogout" class="btn danger ghost" type="button">Sair</button>
+            </div>
+          </div>
+
+          <div class="grid two-cols align-start">
+            <section class="card">
+              <div class="section-title">
+                <p class="eyebrow">Funcionários</p>
+                <h3>Cadastrar ou atualizar</h3>
+              </div>
+
+              <form id="employeeForm" class="stacked-form">
+                <label>
+                  Nome completo
+                  <input id="empName" type="text" required />
+                </label>
+
+                <div class="grid two-cols compact">
+                  <label>
+                    CPF
+                    <input id="empCpf" type="text" inputmode="numeric" maxlength="14" required />
+                  </label>
+                  <label>
+                    Nascimento
+                    <input id="empBirth" type="date" required />
+                  </label>
+                </div>
+
+                <div class="grid two-cols compact">
+                  <label>
+                    Setor
+                    <input id="empSector" type="text" placeholder="Ex.: Produção" />
+                  </label>
+                  <label>
+                    Cargo
+                    <input id="empRole" type="text" placeholder="Ex.: Costureira" />
+                  </label>
+                </div>
+
+                <label class="check-row">
+                  <input id="empActive" type="checkbox" checked />
+                  Funcionário ativo
+                </label>
+
+                <div class="form-actions">
+                  <button class="btn primary" type="submit">Salvar funcionário</button>
+                  <button id="btnClearEmployee" class="btn ghost" type="button">Limpar</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="card">
+              <div class="section-title row-between">
+                <div>
+                  <p class="eyebrow">Lista</p>
+                  <h3>Funcionários cadastrados</h3>
+                </div>
+                <button id="btnReloadEmployees" class="btn ghost" type="button">Atualizar</button>
+              </div>
+              <input id="employeeSearch" class="search" type="search" placeholder="Buscar por nome ou CPF" />
+              <div id="employeesList" class="list empty">Nenhum funcionário carregado.</div>
+            </section>
+          </div>
+
+          <section class="card margin-top">
+            <div class="section-title row-between">
+              <div>
+                <p class="eyebrow">Registros</p>
+                <h3>Pontos batidos</h3>
+              </div>
+              <button id="btnReloadPoints" class="btn ghost" type="button">Atualizar</button>
+            </div>
+
+            <div class="filters">
+              <label>
+                Data inicial
+                <input id="filterStart" type="date" />
+              </label>
+              <label>
+                Data final
+                <input id="filterEnd" type="date" />
+              </label>
+              <label>
+                CPF/Nome
+                <input id="filterEmployee" type="search" placeholder="Buscar funcionário" />
+              </label>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data/Hora</th>
+                    <th>Funcionário</th>
+                    <th>Tipo</th>
+                    <th>Localização</th>
+                    <th>Foto</th>
+                  </tr>
+                </thead>
+                <tbody id="pointsTableBody">
+                  <tr><td colspan="5" class="center muted">Nenhum ponto carregado.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
