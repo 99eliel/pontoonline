@@ -8,7 +8,7 @@ Sistema web simples para bater ponto com CPF, data de nascimento, localização 
 - Login usando CPF e data de nascimento.
 - Captura da localização atual.
 - Captura de foto pela câmera do dispositivo.
-- Registro de Entrada, Pausa, Retorno e Saída.
+- Registro de Bater ponto.
 - Histórico dos últimos pontos do funcionário logado.
 
 ### Administrador
@@ -110,3 +110,8 @@ Depois disso, entre no painel administrativo pelo site usando o e-mail e senha c
 ## Atenção sobre CPF, foto e localização
 
 Este sistema coleta dados pessoais e dados sensíveis de operação, como foto e localização. Para uso real, informe os funcionários, registre a finalidade, controle quem tem acesso e mantenha regras de segurança revisadas. Para produção, o ideal é evoluir o login com Cloud Functions ou outro backend, evitando validação somente pelo navegador.
+
+
+## Ajuste desta versão
+
+Nesta versão o funcionário usa somente o botão **Bater ponto**. Cada registro salva data, horário, foto e localização, e o painel administrativo exibe os horários no relatório.

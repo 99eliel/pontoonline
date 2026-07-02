@@ -1,5 +1,5 @@
-const CACHE_NAME = "ponto-online-v3";
-const CORE_FILES = ["./", "./index.html", "./style.css", "./app.js?v=20260702-3", "./manifest.json", "./icon.svg"];
+const CACHE_NAME = "ponto-online-v4";
+const CORE_FILES = ["./", "./index.html", "./style.css", "./app.js?v=20260702-4", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

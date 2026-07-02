@@ -281,6 +281,10 @@ pre {
   margin-bottom: 12px;
 }
 
+.actions-grid.single-action {
+  grid-template-columns: 1fr;
+}
+
 .list {
   display: grid;
   gap: 10px;

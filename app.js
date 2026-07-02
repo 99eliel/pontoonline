@@ -1,4 +1,4 @@
-import { firebaseConfig } from "./firebase-config.js?v=20260702-3";
+import { firebaseConfig } from "./firebase-config.js?v=20260702-4";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getAuth,
@@ -275,7 +275,7 @@ async function registerPoint(tipo, button) {
   if (!state.cameraStream) return showToast("Ative a câmera antes de bater o ponto.", "error");
 
   const label = tipoLabel(tipo);
-  const confirmed = window.confirm(`Confirmar registro de ${label}?`);
+  const confirmed = window.confirm("Confirmar batida de ponto agora?");
   if (!confirmed) return;
 
   button.disabled = true;
@@ -308,7 +308,7 @@ async function registerPoint(tipo, button) {
       userAgent: navigator.userAgent
     });
 
-    showToast(`${label} registrado com sucesso.`);
+    showToast("Ponto registrado com sucesso.");
     await loadFuncionarioPoints();
   } catch (error) {
     console.error(error);
@@ -572,7 +572,7 @@ function renderAdminPoints() {
   });
 
   if (!items.length) {
-    els.pointsTableBody.innerHTML = `<tr><td colspan="5" class="center muted">Nenhum ponto encontrado.</td></tr>`;
+    els.pointsTableBody.innerHTML = `<tr><td colspan="4" class="center muted">Nenhum ponto encontrado.</td></tr>`;
     return;
   }
 
@@ -588,7 +588,6 @@ function renderAdminPoints() {
       <tr>
         <td>${formatTimestamp(point.createdAt || point.dataHora)}</td>
         <td><strong>${escapeHtml(point.funcionarioNome || "-")}</strong><br><small>${formatCpf(point.funcionarioCpf || "")}</small></td>
-        <td>${tipoLabel(point.tipo)}</td>
         <td>${location}</td>
         <td>${photo}</td>
       </tr>
@@ -597,7 +596,7 @@ function renderAdminPoints() {
 }
 
 function exportPointsCsv() {
-  const rows = [["data_hora", "cpf", "funcionario", "setor", "cargo", "tipo", "latitude", "longitude", "precisao_metros", "foto"]];
+  const rows = [["data_hora", "cpf", "funcionario", "setor", "cargo", "latitude", "longitude", "precisao_metros", "foto"]];
 
   state.lastAdminPoints.forEach((point) => {
     rows.push([
@@ -606,7 +605,6 @@ function exportPointsCsv() {
       point.funcionarioNome || "",
       point.setor || "",
       point.cargo || "",
-      tipoLabel(point.tipo),
       point.localizacao?.lat ?? "",
       point.localizacao?.lng ?? "",
       point.localizacao?.accuracy ?? "",
@@ -679,7 +677,7 @@ function formatFirebaseError(error) {
 }
 
 function tipoLabel(tipo) {
-  const labels = { entrada: "Entrada", pausa: "Pausa", retorno: "Retorno", saida: "Saída" };
+  const labels = { ponto: "Ponto", entrada: "Entrada", pausa: "Pausa", retorno: "Retorno", saida: "Saída" };
   return labels[tipo] || tipo || "-";
 }
 
