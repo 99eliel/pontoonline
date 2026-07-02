@@ -1,3 +1,6 @@
+// Configuração do Firebase do projeto pontoonline-89b2c
+// Este arquivo é usado pelo app.js via import.
+
 export const firebaseConfig = {
   apiKey: "AIzaSyBLeQOBtqDgn5KO29wIuBAJT095lDqNT4s",
   authDomain: "pontoonline-89b2c.firebaseapp.com",

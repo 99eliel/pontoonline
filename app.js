@@ -1,4 +1,4 @@
-import { firebaseConfig } from "./firebase-config.js?v=20260702-2";
+import { firebaseConfig } from "./firebase-config.js?v=20260702-3";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getAuth,
@@ -105,6 +105,8 @@ function bindUi() {
 
   $("#funcCpf").addEventListener("input", (e) => e.target.value = maskCpf(e.target.value));
   $("#empCpf").addEventListener("input", (e) => e.target.value = maskCpf(e.target.value));
+  $("#funcBirth").addEventListener("input", (e) => e.target.value = maskDateBr(e.target.value));
+  $("#empBirth").addEventListener("input", (e) => e.target.value = maskDateBr(e.target.value));
 
   let deferredPrompt = null;
   window.addEventListener("beforeinstallprompt", (event) => {
@@ -124,8 +126,7 @@ function bindUi() {
 function initFirebase() {
   const missingConfig = !firebaseConfig?.apiKey || firebaseConfig.apiKey.includes("COLE_SUA");
   if (missingConfig) {
-    setBadge("Firebase não configurado", "error");
-    showToast("Cole a configuração do seu projeto em firebase-config.js antes de testar.", "error");
+    console.warn("Configuração do sistema pendente.");
     return;
   }
 
@@ -134,7 +135,6 @@ function initFirebase() {
     state.auth = getAuth(state.app);
     state.db = getFirestore(state.app);
     state.storage = getStorage(state.app);
-    setBadge("Conectado ao Firebase", "ok");
 
     onAuthStateChanged(state.auth, async (user) => {
       if (!user) return;
@@ -146,7 +146,6 @@ function initFirebase() {
     });
   } catch (error) {
     console.error(error);
-    setBadge("Erro no Firebase", "error");
     showToast(formatFirebaseError(error), "error");
   }
 }
@@ -170,10 +169,10 @@ async function handleFuncionarioLogin(event) {
   }
 
   const cpf = onlyDigits($("#funcCpf").value);
-  const birth = $("#funcBirth").value;
+  const birth = normalizeBirthDate($("#funcBirth").value);
 
   if (cpf.length !== 11) return showToast("Informe um CPF com 11 números.", "error");
-  if (!birth) return showToast("Informe a data de nascimento.", "error");
+  if (!birth) return showToast("Informe a data de nascimento no formato DD/MM/AAAA.", "error");
 
   setFormLoading(els.funcLoginForm, true);
   try {
@@ -203,7 +202,12 @@ async function handleFuncionarioLogin(event) {
     showToast("Login realizado. Agora ative a câmera e bata o ponto.");
   } catch (error) {
     console.error(error);
-    showToast(formatFirebaseError(error), "error");
+    const message = error?.message || String(error);
+    if (message.includes("permission-denied") || message.includes("Missing or insufficient permissions")) {
+      showToast("CPF ou data de nascimento não conferem com o cadastro.", "error");
+    } else {
+      showToast(formatFirebaseError(error), "error");
+    }
   } finally {
     setFormLoading(els.funcLoginForm, false);
   }
@@ -454,10 +458,10 @@ async function saveEmployee(event) {
 
   const cpf = onlyDigits($("#empCpf").value);
   const nome = $("#empName").value.trim();
-  const nascimento = $("#empBirth").value;
+  const nascimento = normalizeBirthDate($("#empBirth").value);
 
   if (cpf.length !== 11) return showToast("CPF do funcionário deve ter 11 números.", "error");
-  if (!nome || !nascimento) return showToast("Preencha nome, CPF e nascimento.", "error");
+  if (!nome || !nascimento) return showToast("Preencha nome, CPF e nascimento no formato DD/MM/AAAA.", "error");
 
   try {
     await setDoc(doc(state.db, "funcionarios", cpf), {
@@ -529,7 +533,7 @@ function fillEmployeeForm(cpf) {
   if (!emp) return;
   $("#empName").value = emp.nome || "";
   $("#empCpf").value = maskCpf(emp.id || emp.cpf || "");
-  $("#empBirth").value = emp.nascimento || "";
+  $("#empBirth").value = formatBirthDateBr(emp.nascimento || "");
   $("#empSector").value = emp.setor || "";
   $("#empRole").value = emp.cargo || "";
   $("#empActive").checked = emp.ativo !== false;
@@ -641,11 +645,12 @@ async function logoutAll() {
 
 function ensureFirebaseReady() {
   if (!state.auth || !state.db || !state.storage) {
-    throw new Error("Firebase não configurado. Edite firebase-config.js com os dados do seu projeto.");
+    throw new Error("Sistema ainda não está conectado. Confira a configuração antes de testar.");
   }
 }
 
 function setBadge(text, type = "") {
+  if (!els.badge) return;
   els.badge.textContent = text;
   els.badge.className = `badge ${type}`.trim();
 }
@@ -665,12 +670,12 @@ function showToast(message, type = "success") {
 function formatFirebaseError(error) {
   const message = error?.message || String(error);
   if (message.includes("permission-denied") || message.includes("Missing or insufficient permissions")) {
-    return "Sem permissão no Firebase. Confira se as regras foram publicadas e se o usuário está liberado.";
+    return "Sem permissão. Confira se as regras foram publicadas e se o usuário está liberado.";
   }
   if (message.includes("auth/invalid-credential") || message.includes("auth/wrong-password")) return "E-mail ou senha do admin incorretos.";
   if (message.includes("auth/user-not-found")) return "Usuário admin não encontrado.";
-  if (message.includes("auth/operation-not-allowed")) return "Ative Email/Senha e Anonymous no Firebase Authentication.";
-  return message;
+  if (message.includes("auth/operation-not-allowed")) return "Ative os métodos de login Email/Senha e Anônimo nas configurações do projeto.";
+  return message.replace(/^FirebaseError:\s*/i, "");
 }
 
 function tipoLabel(tipo) {
@@ -692,6 +697,47 @@ function maskCpf(value) {
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}
+
+function maskDateBr(value) {
+  const digits = onlyDigits(value).slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function normalizeBirthDate(value) {
+  const text = String(value || "").trim();
+  const digits = onlyDigits(text);
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    const [year, month, day] = text.split("-");
+    return isValidDateParts(year, month, day) ? text : "";
+  }
+
+  if (digits.length !== 8) return "";
+  const day = digits.slice(0, 2);
+  const month = digits.slice(2, 4);
+  const year = digits.slice(4, 8);
+  return isValidDateParts(year, month, day) ? `${year}-${month}-${day}` : "";
+}
+
+function formatBirthDateBr(value) {
+  const text = String(value || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    const [year, month, day] = text.split("-");
+    return `${day}/${month}/${year}`;
+  }
+  return maskDateBr(text);
+}
+
+function isValidDateParts(year, month, day) {
+  const y = Number(year);
+  const m = Number(month);
+  const d = Number(day);
+  if (!y || !m || !d || y < 1900 || y > new Date().getFullYear()) return false;
+  const date = new Date(y, m - 1, d);
+  return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
 }
 
 function formatCpf(value) {

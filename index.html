@@ -17,7 +17,6 @@
       </div>
       <div class="top-actions">
         <button id="btnInstall" class="btn ghost hidden" type="button">Instalar app</button>
-        <span id="connectionBadge" class="badge">Firebase não configurado</span>
       </div>
     </header>
 
@@ -25,7 +24,7 @@
       <section class="hero-card">
         <div>
           <h2>Bata o ponto com CPF, data de nascimento, localização e foto.</h2>
-          <p>Protótipo pronto para testar com Firebase + GitHub Pages. Use o painel administrativo para cadastrar funcionários e acompanhar os registros.</p>
+          <p>Sistema pronto para cadastrar funcionários, registrar jornada e acompanhar os pontos pelo painel administrativo.</p>
         </div>
         <div class="hero-metrics">
           <div><strong id="clockTime">--:--</strong><span>Horário atual</span></div>
@@ -53,7 +52,7 @@
 
             <label>
               Data de nascimento
-              <input id="funcBirth" type="date" required />
+              <input id="funcBirth" type="text" inputmode="numeric" autocomplete="off" placeholder="DD/MM/AAAA" maxlength="10" required />
             </label>
 
             <button class="btn primary full" type="submit">Entrar</button>
@@ -65,7 +64,7 @@
             <ol>
               <li>O funcionário informa CPF e data de nascimento.</li>
               <li>O navegador solicita permissão de localização e câmera.</li>
-              <li>O registro salva data, hora, coordenadas e foto no Firebase.</li>
+              <li>O registro salva data, hora, coordenadas e foto no sistema.</li>
             </ol>
             <p class="warning">Use com consentimento dos funcionários e informe a finalidade do uso da foto e localização.</p>
           </aside>
@@ -125,7 +124,7 @@
       </section>
 
       <section id="adminView" class="view">
-        <div id="adminLoginCard" class="grid two-cols">
+        <div id="adminLoginCard" class="login-center">
           <form id="adminLoginForm" class="card form-card">
             <div class="section-title">
               <p class="eyebrow">Painel administrativo</p>
@@ -143,20 +142,7 @@
             </label>
 
             <button class="btn primary full" type="submit">Entrar no painel</button>
-            <p class="hint">O primeiro administrador precisa ser liberado no Firestore usando o UID da conta.</p>
           </form>
-
-          <aside class="card info-card">
-            <h3>Primeiro acesso do admin</h3>
-            <p>Crie um usuário com e-mail e senha no Firebase Authentication. Depois copie o UID e crie o documento:</p>
-            <pre><code>admins/UID_DO_ADMIN
-{
-  nome: "Eliel",
-  email: "seuemail@dominio.com",
-  ativo: true,
-  role: "admin"
-}</code></pre>
-          </aside>
         </div>
 
         <div id="adminArea" class="hidden">
@@ -191,7 +177,7 @@
                   </label>
                   <label>
                     Nascimento
-                    <input id="empBirth" type="date" required />
+                    <input id="empBirth" type="text" inputmode="numeric" autocomplete="off" placeholder="DD/MM/AAAA" maxlength="10" required />
                   </label>
                 </div>
 
@@ -278,6 +264,6 @@
   </div>
 
   <div id="toast" class="toast hidden" role="status"></div>
-  <script type="module" src="app.js"></script>
+  <script type="module" src="app.js?v=20260702-3"></script>
 </body>
 </html>
