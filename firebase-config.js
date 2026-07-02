@@ -1,13 +1,12 @@
-// 1) Crie um projeto no Firebase.
-// 2) Adicione um app Web.
-// 3) Copie a configuração do Firebase para este arquivo.
-// 4) Ative: Authentication > Email/Senha e Anonymous; Firestore; Storage.
+// Configuração do Firebase do projeto pontoonline-89b2c
+// Este arquivo é usado pelo app.js via import.
 
 export const firebaseConfig = {
-  apiKey: "COLE_SUA_API_KEY_AQUI",
-  authDomain: "SEU-PROJETO.firebaseapp.com",
-  projectId: "SEU-PROJETO",
-  storageBucket: "SEU-PROJETO.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:0000000000000000000000"
+  apiKey: "AIzaSyBLeQOBtqDgn5KO29wIuBAJT095lDqNT4s",
+  authDomain: "pontoonline-89b2c.firebaseapp.com",
+  projectId: "pontoonline-89b2c",
+  storageBucket: "pontoonline-89b2c.firebasestorage.app",
+  messagingSenderId: "1002172076605",
+  appId: "1:1002172076605:web:978d0dd9eac6ccdf31d054",
+  measurementId: "G-BJVQBZYDR9"
 };
